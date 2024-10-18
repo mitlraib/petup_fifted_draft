@@ -1,16 +1,18 @@
 // SwipePage.js
 
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Image, Text, TextInput, StyleSheet, Dimensions, Pressable, Alert } from 'react-native';
+import { View, Image, Text, TextInput, StyleSheet, Dimensions, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import Swiper from 'react-native-deck-swiper';  // Import the Tinder-like swiper
 
-import { titles } from '../menu/headers';
-import colors from '../../utils/colors';
-import ApplicationFormPage from '../applicationForm/ApplicationFormPage';
-import defaultImage from '../../../assets/images/poxi.jpeg';
-import arrowImage from '../../../assets/images/upArrow.png'; // הוספת התמונה החדשה
+import { titles } from '../src/menu/headers';
+import colors from '../src/utils/colors';
+import defaultImage from '../../assets/images/poxi.jpeg';
+import arrowImage from '../../assets/images/upArrow.png'; 
+import menuLineIconImage from '../../assets/images/menuLineIcon.jpg'; 
+import searchIconImage from '../../assets/images/searchIcon.png'; 
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,11 +69,31 @@ const SwipePage = () => {
     setMenuClicked(!menuClicked);
   };
 
+  const whenLikedClicked = () => {
+    
+
+  };  
+
   const handleMenuItemPress = (title) => {
     if (title === "יש לי כלב/ה למסור") {
       whenMenuClicked();
       router.navigate('applicationForm/ApplicationFormPage');
-    } else {
+    }
+    else if (title === "כלבים שסימנתי בלייק") {
+      whenMenuClicked();
+    router.navigate('myLikedDogs/MyLikedDogs');
+    }
+    else if (title === "אודות") {
+    whenMenuClicked();
+  router.navigate('aboutPage/AboutPage');
+    }
+    
+    else if (title === "הפרופיל שלי") {
+  whenMenuClicked();
+router.navigate('myProfile/MyProfile');
+} 
+    
+    else {
       Alert.alert(`בחרת את הכותרת: ${title}`);
     }
   };
@@ -135,7 +157,7 @@ const SwipePage = () => {
       <View style={styles.header}>
         <Pressable onPress={whenMenuClicked} style={styles.menuIconContainer}>
           <Image
-            source={require('../../../assets/images/menuLineIcon.jpg')}
+            source={menuLineIconImage}
             style={styles.menuIcon}
           />
         </Pressable>
@@ -145,8 +167,8 @@ const SwipePage = () => {
             placeholder={"search"}
           />
           <Pressable>
-            <Image
-              source={require('../../../assets/images/searchIcon.png')}
+            <Image 
+              source={searchIconImage}
               style={styles.searchIcon}
             />
           </Pressable>
@@ -165,7 +187,7 @@ const SwipePage = () => {
 
       {menuClicked && (
         <View style={styles.menu}>
-          <Pressable onPress={whenMenuClicked} style={styles.xstayle}>
+          <Pressable onPress={whenMenuClicked}>
             <Text style={styles.xStyleText}>X</Text>
           </Pressable>
           {titles.map((title, index) => (

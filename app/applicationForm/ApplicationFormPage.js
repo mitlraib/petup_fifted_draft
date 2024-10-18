@@ -1,22 +1,18 @@
 
-
 //ApplicationFormPage.js
-
-
-import colors from '@/app/utils/colors';
+import colors from '@/app/src/utils/colors';
 import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Image, Pressable, ImageBackground } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { creatDog, dogsDescription, NewDogsInformation } from '../../newDogsInformation/NewDogsInformation';
 import { useRouter } from 'expo-router';
-import SwipePage, { swipePage } from '../swipepage/SwipePage';
-import TryingScreen from '../tryingScreen/TryingScreen';
-
+import * as FileSystem from 'expo-file-system'
+import axios from 'axios';
+import { ServerIP } from '@/constants/Network';
+import { uploadImage } from '@/firebase/storage';
 
 export const ApplicationFormPage = () => {
-  //{route}
-  // שדות פתוחים
 
+  // שדות פתוחים
   const [dogName, setDogName] = useState("");
   const [description, setDescription] = useState("");
   const [ageInNumbers, setAgeInNumbers] = useState("");
@@ -47,14 +43,16 @@ export const ApplicationFormPage = () => {
   const [mediumChecked, setMediumChecked] = useState(false);
   const [smallChecked, setSmallChecked] = useState(false);
 
+  const [size, setSize] = useState('');
+
   const [spayedChecked, setSpayedChecked] = useState(false);
   const [notSpayedChecked, setNotSpayedChecked] = useState(false);
 
   const [monthsChecked, setMonthsChecked] = useState(false);
   const [yearsChecked, setYearsChecked] = useState(false);
 
- const [contactName, setContactName] = useState("");
- const [contactPhoneNumber, setContactPhoneNumber] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactPhoneNumber, setContactPhoneNumber] = useState("");
 
 
   // שדות שלא מולאו:
@@ -62,7 +60,6 @@ export const ApplicationFormPage = () => {
   const [descriptionUnfil, setDescriptionUnfil] = useState("");
   const [ageInNumbersUnfil, setAgeInNumbersUnfil] = useState("");
   const [locationUnfil, setLocationUnfil] = useState("");
-  
 
   const [sexCheckedUnfil, setSexCheckedUnfil] = useState("");
   const [houseCheckedUnfil, setHouseCheckedUnfil] = useState("");
@@ -82,12 +79,13 @@ export const ApplicationFormPage = () => {
   const [isBreedDropdownVisible, setBreedDropdownVisible] = useState(false);
   const [selectedBreeds, setSelectedBreeds] = useState([]);
 
-  const [image, setImage] = useState(null);
+
+  const [imageUri, setImageUri] = useState(null);
 
   const [descriptionCharectersCounter, setDescriptionCharectersCounter] = useState(0)
 
   const router = useRouter();
-  
+
 
   const renderCheckbox = (isChecked, onChange) => (
     <TouchableOpacity
@@ -116,7 +114,7 @@ export const ApplicationFormPage = () => {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setImageUri(result.assets[0].uri)
     }
   };
 
@@ -124,8 +122,8 @@ export const ApplicationFormPage = () => {
     if (description.length > 0) {
       setDescriptionCharectersCounter(description.length)
     }
-  // בצע פעולה כאשר `description` משתנה
-}, [description]);
+    // בצע פעולה כאשר `description` משתנה
+  }, [description]);
 
   const handleSend = () => {
 
@@ -139,11 +137,11 @@ export const ApplicationFormPage = () => {
       else if ((dogName == "")) {
         setDogNameUnfil("נא למלא את שם הכלב")
       }
-      
+
       else if ((selectedBreeds.length === 0)) {
         setBreedsUnfil("נא למלא את גזע הכלב")
       }
-       
+
       else if ((!trainedChecked) && (!untrainedChecked)) {
         setTrainedCheckedUnfil("נא למלא את רמת אילוף הכלב")
       }
@@ -166,7 +164,7 @@ export const ApplicationFormPage = () => {
       else if ((!needsChecked) && (!noNeedsChecked)) {
         setNeedsCheckedUnfil("נא למלא את חינוך  הכלב")
       }
-        
+
       else if (!ageInNumbers) {
         setAgeInNumbersUnfil("נא למלא את גיל הכלב")
       }
@@ -179,38 +177,37 @@ export const ApplicationFormPage = () => {
       else if (location == "") {
         setLocationUnfil("נא למלא את מיקום הכלב")
       }
-        
-           
+
+
       else if (contactName == "") {
         setContactNameUnfil("נא למלא את שם איש הקשר  ")
       }
-        
+
       else if (!contactPhoneNumber) {
         setContactPhoneNumberUnfil("נא למלא את מספר הטלפון של איש הקשר ")
       }
 
-      else if (image == null) {
+      else if (imageUri == null) {
         setImageUnfil("נא למלא את תמונת הכלב")
       }
       else { setButtonSendValid(true) }
-      
+
     }
 
     else {
+      if (largeChecked) {
+        setSize("large")
+      }
+      if (mediumChecked) {
+        setSize("medium")
+      }
+      if (smallChecked) {
+        setSize("small")
+      }
+
       setButtonSendClicked(true);  // הגדר את הכפתור כ"לחוץ" כדי למנוע לחיצה כפולה
-
-      
-      router.push({
-        pathname: 'swipepage/SwipePage',
-        params: {
-          dogName, description, ageInNumbers, location, maleChecked, femaleChecked,
-          houseChecked, gardenChecked, trainedChecked, untrainedChecked,
-          vaccinatedChecked, notVaccinatedChecked, needsChecked, noNeedsChecked,
-          largeChecked, mediumChecked, smallChecked, spayedChecked, notSpayedChecked, monthsChecked,
-          yearsChecked, contactName, contactPhoneNumber, selectedBreeds, image
-        }
-      });
-
+      //לבדוק:
+      insertDogInfo();
 
       setDogName(""); setDescription(""); setAgeInNumbers("");
       setLocation(""); setButtonSendClicked(false); setButtonSendValid(false);
@@ -220,16 +217,67 @@ export const ApplicationFormPage = () => {
       setLargeChecked(false); setMediumChecked(false); setSmallChecked(false);
       setSpayedChecked(false); setNotSpayedChecked(false); setMonthsChecked(false);
       setYearsChecked(false); setContactName(""); setContactPhoneNumber("");
-      setSelectedBreeds([]); setImage(null);
-    setDogNameUnfil(""); setDescriptionUnfil("");
-    setAgeInNumbersUnfil(""); setLocationUnfil(""); setSexCheckedUnfil("");
-    setHouseCheckedUnfil(""); setTrainedCheckedUnfil(""); setVaccinatedCheckedUnfil("");
-    setNeedsCheckedUnfil(""); setSizeCheckedUnfil(""); setSpayedCheckedUnfil("");
+      setSelectedBreeds([]); setImageUri(null);
+      setDogNameUnfil(""); setDescriptionUnfil("");
+      setAgeInNumbersUnfil(""); setLocationUnfil(""); setSexCheckedUnfil("");
+      setHouseCheckedUnfil(""); setTrainedCheckedUnfil(""); setVaccinatedCheckedUnfil("");
+      setNeedsCheckedUnfil(""); setSizeCheckedUnfil(""); setSpayedCheckedUnfil("");
       setMonthsCheckedUnfil(""); setContactNameUnfil(""); setContactPhoneNumberUnfil("");
       setBreedsUnfil(""); setImageUnfil(""); setDescriptionCharectersCounter(0)
-  }
+    }
   };
 
+
+  
+
+
+
+  const insertDogInfo = async () => {
+    try {
+      //לבדוק!
+        // המרת התמונה ל-blob בעזרת fetch
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+    
+      const imageUrl = await uploadImage(blob, "dogImage1")
+      const body = {
+        name: dogName,
+        location,
+        description,
+        age: ageInNumbers,
+        male: maleChecked,
+        indoor: houseChecked,
+        trained: trainedChecked,
+        vaccinated: vaccinatedChecked,
+        pottyTrained: needsChecked,
+        sterilized: spayedChecked,
+        puppy: monthsChecked,
+        breed: selectedBreeds,
+        size,
+        image: imageUrl.replace("localhost", ServerIP).replace("127.0.0.1",ServerIP ),
+        contactName,
+        contactTel: contactPhoneNumber,
+      }
+      const resposnt = await axios.post(`http://${ServerIP}:5000/api/dog/dog`, body)
+      if (resposnt.status === 201) {
+        Alert.alert("הצלחה")
+        router.navigate('swipepage/SwipePage');
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+
+
+
+  };
+
+
+
+
+  const returnToMainPaige = () => {
+    router.navigate('swipepage/SwipePage');
+  }
 
 
   return (
@@ -238,6 +286,14 @@ export const ApplicationFormPage = () => {
       style={styles.backgroundImage}
     >
       <ScrollView style={styles.container}>
+
+        <Pressable
+          onPress={returnToMainPaige}
+        >
+
+          <Text style={styles.X}>חזרה לדף הראשי ללא שמירת הנתונים X  </Text>
+        </Pressable>
+
         <Text style={styles.title}>טופס מסירה</Text>
 
 
@@ -454,10 +510,10 @@ export const ApplicationFormPage = () => {
           />
         </View>
 
-        <View style={{flexDirection:"row-reverse"}}>
+        <View style={{ flexDirection: "row-reverse" }}>
 
-        <Text style={styles.warningText}>{ageInNumbersUnfil}</Text>
-        <Text style={styles.warningText}>{monthsCheckedUnfil}</Text>
+          <Text style={styles.warningText}>{ageInNumbersUnfil}</Text>
+          <Text style={styles.warningText}>{monthsCheckedUnfil}</Text>
 
         </View>
 
@@ -474,9 +530,9 @@ export const ApplicationFormPage = () => {
         <TextInput
           style={[styles.textInput, { height: 120 }]}
           onChangeText={setDescription}
-          placeholder=" ספרו לנו על הכלב\ה שלכם: (ב 40 תוים בלבד) "
+          placeholder=" ספרו לנו על הכלב\ה שלכם: (ב 500 תוים בלבד) "
           value={description}
-          maxLength={200} // מגביל את מספר התווים ל-200
+          maxLength={500}
           multiline={true}
         />
         <Text style={styles.warningText}>{descriptionUnfil}</Text>
@@ -485,11 +541,11 @@ export const ApplicationFormPage = () => {
         <TouchableOpacity style={styles.imageUploadButton} onPress={pickImage}>
           <Text style={styles.imageUploadText}>העלה תמונה</Text>
         </TouchableOpacity>
-        {image && <Image source={{ uri: image }} style={styles.image} />}
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
 
         <Text style={styles.warningText}>{imageUnfil}</Text>
 
-        <Text style={{fontSize:18, paddingBottom: 20}} >פרטי קשר של המוסר: </Text>
+        <Text style={{ fontSize: 18, paddingBottom: 20 }} >פרטי קשר של המוסר: </Text>
 
         <TextInput
           style={styles.textInput}
@@ -499,14 +555,17 @@ export const ApplicationFormPage = () => {
         />
         <Text style={styles.warningText} >{contactNameUnfil}</Text>
 
-        
+
         <TextInput
           style={styles.textInput}
           onChangeText={setContactPhoneNumber}
           placeholder="מספר טלפון של איש קשר:"
           value={contactPhoneNumber}
-          
+          keyboardType="numeric"
         />
+
+
+
         <Text style={styles.warningText} >{contactPhoneNumberUnfil}</Text>
 
 
@@ -530,12 +589,20 @@ const styles = StyleSheet.create({
     flex: 1,
     resizeMode: 'cover',
   },
+  X: {
+    fontSize: 14,
+    textAlign: 'left',
+    color: colors.darkPurple,
+    paddingTop: 10
+  },
   title: {
     fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 25,
     textAlign: 'center',
+    paddingTop: 25
   },
+
   textInput: {
     borderColor: colors.text,
     borderWidth: 1,
@@ -617,7 +684,7 @@ const styles = StyleSheet.create({
     marginBottom: 90,
 
 
-    
+
 
   },
   submitButtonText: {

@@ -2,13 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Image, Text, TextInput, StyleSheet, Dimensions, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
-import Swiper from 'react-native-deck-swiper';  // Import the Tinder-like swiper
 
-import { titles } from '../(tabs)/menu/headers';
-import colors from '../utils/colors';
-import ApplicationFormPage from '../(tabs)/applicationForm/ApplicationFormPage';
+import { titles } from '../src/menu/headers';
+import colors from '../src/utils/colors';
 import defaultImage from '../../assets/images/poxi.jpeg';
-import arrowImage from '../../assets/images/upArrow.png';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,13 +44,33 @@ const NewDogsInformation = () => {
 
     const whenMenuClicked = () => {
         setMenuClicked(!menuClicked);
-    };  
+  };  
+  
+  const whenLikedClicked = () => {
+    //router.navigate('myLikedDogs/MyLikedDogs');
+  };  
     
   const handleMenuItemPress = (title) => {
     if (title === "יש לי כלב/ה למסור") {
       whenMenuClicked();
       router.navigate('applicationForm/ApplicationFormPage');
-    } else {
+    }
+    else if (title === "כלבים שסימנתי בלייק") {
+      whenMenuClicked();
+    router.navigate('myLikedDogs/MyLikedDogs');
+  } 
+    
+  else if (title === "אודות") {
+    whenMenuClicked();
+  router.navigate('aboutPage/AboutPage');
+    } 
+    else if (title === "הפרופיל שלי") {
+      whenMenuClicked();
+    router.navigate('myProfile/MyProfile');
+    } 
+        
+    
+    else {
       Alert.alert(`בחרת את הכותרת: ${title}`);
     }
   };
@@ -185,7 +202,7 @@ const NewDogsInformation = () => {
 
                     <View style={{ flexDirection: 'row' }}>
                         <Pressable
-                            onPress={() => Alert.alert('  message ')}
+                            onPress={router.navigate('userProfile/UserProfile')}
                         >
                             <Image
                                 source={require('../../assets/images/messegeIkon.png')}
@@ -197,7 +214,7 @@ const NewDogsInformation = () => {
 
               <Pressable
                   style={styles.likeButton}
-                  onPress={() => Alert.alert('אוהב את זה?? ')}
+                  onPress={whenLikedClicked}
               >
                   <Text style={{ fontSize: 25}}> ❤️ </Text>
               </Pressable>
@@ -281,14 +298,17 @@ const styles = StyleSheet.create({
   xstayle: {
     marginTop: 40,
     marginLeft: 10,
+
   },
   xStyleText: {
     fontSize: 20,
-    color: colors.red,
+color: colors.purpleIsh
+
   },
   menuText: {
     marginTop: 20,
-    fontSize: 20,
+    fontSize: 16,
+    paddingTop:20
   },
   card: {
     padding: 10,
